@@ -1,0 +1,17 @@
+<data>
+<moveable>false</moveable>
+<leverange>false</leverange>
+<newsampleb>false</newsampleb>
+<samplesizeglider>false</samplesizeglider>
+<standardization>false</standardization>
+<bccolor>0xeeffee</bccolor>
+
+<pointternostr>&lt;b&gt;Değişkenler arasında tam doğrusal olmayan &lt;br&gt;korelasyon vardır.&lt;/b&gt;&lt;br&gt;Doğrusal korelasyon katsayısı hesaplamak doğru değildir.&lt;br&gt;</pointternostr>
+<pointterposstr>&lt;b&gt;Değişkenler arasında tam doğrusal olmayan korelasyon vardır &lt;br&gt;Doğrusal korelasyon katsayısı hesaplamak doğru değildir.</pointterposstr>
+
+<pointternegstr>&lt;b&gt;Değişkenler arasında tam doğrusal olmayan &lt;br&gt;korelasyon vardır.&lt;/b&gt;&lt;br&gt;Doğrusal korelasyon katsayısı hesaplamak doğru değildir.&lt;br&gt;</pointternegstr>
+
+<nobservations>34</nobservations>
+<datax>-1.65692,-1.55650,-1.45608,-1.35566,-1.25524,-1.15482,-1.05440,-0.95398,-0.85356,-0.75314,-0.65273,-0.55231,-0.45189,-0.35147,-0.25105,-0.15063,-0.05021,0.05021,0.15063,0.25105,0.35147,0.45189,0.55231,0.65273,0.75314,0.85356,0.95398,1.05440,1.15482,1.25524,1.35566,1.45608,1.55650,1.65692</datax>
+<datay>1.00130,0.72484,0.46862,0.23262,0.01686,-0.17868,-0.35399,-0.50908, -0.64393,-0.75856,-0.85296,-0.92713,-0.98107,-1.01478,-1.02827,-1.02153, -0.99455,-0.94735,-0.87993,-0.79227,-0.68439,-0.55628,-0.40794,-0.23937,-0.05057,0.15845,0.38771,0.63719,0.90690,1.19684,1.50700,1.83740, 2.18802,2.55887</datay>
+</data>

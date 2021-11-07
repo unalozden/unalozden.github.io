@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sanat>
+<!--  Colors     -->
+
+<!--  Header     -->
+<corrc>Korelasyon Katsayısı</corrc>
+<translation>&lt;br&gt;Türkçeleştirme Ünal H. Özden tarafından yapılmıştır.  &lt;br&gt;</translation>
+<!--  Checkboxes       -->
+<cb1label>Leverage </cb1label>
+<cb2label>Yardımın Görünmesi için</cb2label>
+<cb3label>Regresyon Doğrusu</cb3label>
+<cb4label>Standardize Et</cb4label>
+
+<!--  Buttons          -->
+<newsamplelabel>Yeni Örnek</newsamplelabel>
+
+<!--  selitykset     -->
+<obstext1>Gözlem</obstext1>
+<obstext2>Gözlem</obstext2>
+
+<cb1str>&lt;b&gt;Leverage&lt;/b&gt;&lt;br&gt;When ticked, the size of the&lt;br&gt;sample points indicates how&lt;br&gt;much leverage they have on &lt;br&gt;the position of the regression line&lt;br&gt;and on the correation coefficient.</cb1str>
+<cb2str>&lt;b&gt;Info&lt;/b&gt;&lt;br&gt;Tick to enable rollover information</cb2str>
+<cb3str>&lt;b&gt;Regresyon Doğrusu&lt;/b&gt;&lt;br&gt;Tick to display Regression Line.</cb3str>
+<cb4str>&lt;b&gt;Standardisation&lt;/b&gt;&lt;br&gt;If this check-box is ticked,&lt;br&gt;the data will be standardised &lt;br&gt;(mean = 0 and standard deviation = 1)&lt;br&gt;every time a point is moved.</cb4str>
+
+<faderstr>&lt;b&gt;Örnek birim sayısı&lt;/b&gt;&lt;br&gt;Örnek birim sayısını değiştirmek için hareket ettirip,&lt;br&gt;"Yeni Örnek"e tıkla.</faderstr>
+<newsamplestr>&lt;b&gt;Yeni Örnek&lt;/b&gt;&lt;br&gt;Yeni bir örnek oluşturmak için tıklayınız&lt;br&gt;&lt;br&gt;</newsamplestr>
+<pointterstr>&lt;b&gt;Korelasyon Katsayısı&lt;/b&gt;&lt;br&gt;Korelasyon katsayısını değiştirmek için hareket ettirin&lt;br&gt;</pointterstr>
+
+<pointternostr>&lt;b&gt;Değişkenler arsında doğrusal korelasyon yoktur.&lt;br&gt;&lt;/b&gt;&lt;br&gt;Korelasyon katsayısı &lt;b&gt;sıfır olabilir&lt;/b&gt;.</pointternostr>
+<pointterposstr>&lt;b&gt;X değerleri artarken Y değerleri de artıyorsa,&lt;br&gt;&lt;/b&gt;&lt;br&gt;değişkenler arasında pozitif yönlü doğrusal korelasyon vardır. </pointterposstr>
+
+<pointternegstr>&lt;b&gt;X değerleri artarken Y değerleri de azalıyorsa,&lt;b&gt;değişkenler arasında negatif yönlü doğrusal korelasyon vardır.</pointternegstr>
+<pointterpos1str>&lt;b&gt;Bütün gözlem değerleri aynı çizgi üzerinde olduğunda, &lt;b&gt;değişkenler arasında pozitif tam doğrusal korelasyon vardır.</pointterpos1str>
+<pointterneg1str>&lt;b&gt;Bütün gözlem değerleri aynı çizgi üzerinde olduğunda, &lt;b&gt;değişkenler arasında negatif tam doğrusal korelasyon vardır.</pointterneg1str>
+
+</sanat>

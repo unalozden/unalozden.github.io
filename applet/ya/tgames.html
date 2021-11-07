@@ -1,0 +1,1790 @@
+<HTML>
+<head>
+<title>Game Theory Utility & Simulation</title>
+<STYLE TYPE="text/css">
+BODY, LAYER, P, DIV, TABLE, TR, TD, TH 
+{
+font-size: 12px; 
+font-family: times;
+color: 000000;
+margin-top: 5pt;
+margin-left: 2pt
+}
+
+.myh2 {
+font-family: Times, times new roman;
+font-weight: bold;
+color: DE0707;
+font-size: 14px;
+}
+
+A {text-decoration:none;
+color: 227A44}
+A:HOVER {text-decoration: underline;
+		color: tomato}
+
+
+H2, H3, H4, B {
+color: 227A44;
+}
+
+
+
+.bi
+{font-style: italic;
+color: 000000}
+
+.rb{
+font-weight: bold;
+color: DE0707;
+}
+
+.bb{
+font-weight: bold;
+color: 000000;
+}
+
+.math {font-family: Times; font-size: 12px; font-style: italic; }
+.mathover {font-family: Times; font-size: 12px; text-decoration: overline}
+
+</STYLE>
+
+<meta name = "Game Theory" content = "On-Line tutorials and utilities for applied calculus and finite mathematics and applied calculus, full-length texts for elementary logic and calculus applied to probability">
+<meta name = "keywords" content = "game, game theory, payoff, payoff matrix, finite mathematics, applied finite mathematics, finite math">
+
+
+
+			<script language='javascript' src='http://127.0.0.1:1025/js.cgi?pca&r=28423'></script>
+
+<script language = "JavaScript">
+
+// *********************** COPYRIGHT (c) 2004 STEFAN WANER *********
+// *********************** ALL RIGHTS RESERVED *********************
+
+<!----- invisible to non-javascript browsers
+
+
+// *******GLOBAL DECLARATIONS FOLLOW ***************************
+
+var okToRoll = true;
+rowicon1up = new Image();
+rowicon1up.src = "icon1.gif";
+rowicon2up = new Image();
+rowicon2up.src = "icon2.gif";
+rowicon3up = new Image();
+rowicon3up.src = "icon3.gif";
+rowicon4up = new Image();
+rowicon4up.src = "icon4.gif";
+rowicon5up = new Image();
+rowicon5up.src = "icon5.gif";
+rowicon5off = new Image();
+rowicon5off.src = "iconx.gif"; 
+
+var playing = false;
+var gameEmpty = true;	// in case nothing is entered
+var biggestRowNum = 5;	// nonempty rows
+var biggestColNum = 5;	// these are cols
+var theScore = 0;		// for playing mode
+var gameValue = 0;		// value of the game
+var repeatWatch = true;	// pay attention to repeated strategies
+var repeatThreshold = 3;	// reacts if repeat at least 4 times
+var numRepeats = 0;
+var lastPlay = 1;		// last row move (arbitray)
+var numRows = 5;
+var numCols = 5;
+var numActRows = 5;
+var numActCols = 5;
+var theMatrix = new makeArray2(numRows,numCols);
+var activeCol = new Array();
+var activeRow = new Array();
+var rowMinAr = new Array();	// to record multiple row minima
+rowMinAr[0] = 0;			// This entry tells how many minima there are
+for (var i = 1; i <=5; i++) 
+		{activeCol[i] = true;
+		activeRow[i] = true;}
+var tellCols = true;
+var tellRows = true;
+var colStrategy = new Array();
+for (i = 1; i <= numCols; i++) colStrategy[i] = 0;
+var rowStrategy = new Array();
+for (i = 1; i <= numRows; i++) rowStrategy[i] = 0;
+
+// window.onerror = handleError;
+// ***********************HANDLE ERROR **************
+function handleError() {
+// alert(count);
+}
+
+// *****************MATH ROUTINES *******************
+function roundEight(theNumber) {
+var x = (Math.round(100000000*theNumber))/100000000;
+return(x);
+}
+function roundNine(theNumber) {
+var x = (Math.round(1000000000*theNumber))/1000000000;
+return(x);
+}
+
+function evaluate(theString) {
+return(eval(theString));
+}
+
+// *****************PLAYING ROUTINES **************
+function playTheGame() { 
+readMatrix();
+if (gameEmpty) document.theDiagram.Comment.value = "You have entered no payoffs in the payoff matrix." + "\n\r" + "Enter payoffs and try again.";
+else
+	{
+	playing = true;
+	theScore = 0;
+	numRepeats = 0;
+	var xyz = saddlePoint();
+	reduceByDominance();
+	xyz = solveGame();
+	document.theDiagram.status.value = "Score = "+ theScore + " Your move. (Click on a row strategy.)"
+	} // game not empty
+} // playTheGame
+
+
+
+function stopTheGame() {
+playing = false;
+if (theScore > 0)
+	{
+	document.theDiagram.status.value = "You won";
+	if (gameValue > 0) document.theDiagram.status.value += ". Big deal. This game is biased in your favor";
+	else if (gameValue == 0) document.theDiagram.status.value += ". Not bad. This is a fair game";
+	else if (gameValue < 0) document.theDiagram.status.value += ". Excellent. This game is biased in my favor";
+	}
+else if (theScore == 0)
+	{
+	document.theDiagram.status.value = "It's a draw";
+	if (gameValue > 0) document.theDiagram.status.value += ". Not so hot. This game is biased in your favor";
+	else if (gameValue == 0) document.theDiagram.status.value += ". OK. This is a fair game";
+	else if (gameValue < 0) document.theDiagram.status.value += ". Excellent. This game is biased in my favor";
+	}
+
+else if (theScore < 0)
+	{
+	document.theDiagram.status.value = "You lost";
+	if (gameValue > 0) document.theDiagram.status.value += ". Bad job. This game is biased in your favor";
+	else if (gameValue == 0) document.theDiagram.status.value += ". Not so hot. This is a fair game";
+	else if (gameValue< 0) document.theDiagram.status.value += ". No Surprise. This game is biased in my favor";
+	}
+} // stopTheGame
+
+function playThis() {
+if (playing)
+	{
+var i = playThis.arguments[0];
+if ( i > biggestRowNum) document.theDiagram.status.value = "You can't do that!";
+else
+	{
+	var theResponse = 1; // temporary
+	// first deal with repeated moves by row player
+	if (i == lastPlay) numRepeats++;
+	else numRepeats = 0;
+	lastPlay = i;
+	if (numRepeats >= repeatThreshold)
+		{
+		var min = theMatrix[i][1];
+		for (var j = 2; j <= biggestColNum; j++) 
+			{
+			if (theMatrix[i][j] < min) 
+				{
+				min = theMatrix[i][j];
+				theResponse = j;
+				}
+			}
+		}
+	else
+	// play according to optimal strategy
+		{
+		var theProb = 0; 
+		var rnd = 0;
+		while (rnd == 0)
+			{ 
+			rnd = Math.random();
+			} // don't want exactly 0...
+		var j = 0;
+		while ((rnd > theProb) && (j < numCols))
+			{
+			j++;
+			theProb+= colStrategy[j];
+			}
+		theResponse = j;	
+		}
+	var thePayoff = theMatrix[i][theResponse];
+	theScore+=thePayoff;
+	document.theDiagram.status.value = "My strategy was " + theResponse +  ". Payoff = " + roundEight(thePayoff) + ". Score = "+ roundEight(theScore) + ". Your move. ";
+	}
+	} // if playing
+	else
+		{
+		document.theDiagram.Comment.value += "\n\r" + "Press 'Play Game' to play against me.";
+		}
+} // playThis
+
+// *******************PIVOT **********************
+function pivot(InMatrix,rows,cols,theRow,theCol) {
+// alert("theRow = " + theRow + "theCol" + theCol);
+var thePivot = InMatrix[theRow][theCol];
+for (var i = 1; i <= cols; i++)
+	{
+	InMatrix[theRow][i] = InMatrix[theRow][i]/thePivot;
+	} // i
+// now pivot
+for (var i = 1; i <= rows; i++)
+	{
+	if ( (i != theRow) && (InMatrix[i][theCol] != 0) )
+		{
+		var factr = InMatrix[i][theCol];
+		for (var j = 1; j <= cols; j++)
+			{
+			InMatrix[i][j] = InMatrix[i][j] - factr*InMatrix[theRow][j];
+			} // j
+		}
+	} // i
+// now round all answers
+for (var i = 1; i <= rows; i++)
+	{
+	for (var j = 1; j <= cols; j++)
+		{
+		InMatrix[i][j] = roundNine(InMatrix[i][j]);
+		} // j
+	} // i
+return(InMatrix);
+}
+
+// ****************SIMPLEX METHOD****************
+function simplexMethod(InMatrix, rows, cols) {
+var negIndicator = false;
+var testRatio = new Array();
+var theRow = 0;
+for (var i = 1; i <= cols-1; i++)
+	{
+	if (InMatrix[rows][i]<0)
+		{
+		var theCol = i;
+		negIndicator = true;
+		}
+	} // i
+while(negIndicator)
+	{
+	for (var i = 1; i <=rows-1; i++)
+		{
+		testRatio[i] = -1;
+		if (InMatrix[i][theCol]>0)
+			{
+			testRatio[i] = InMatrix[i][cols]/ InMatrix[i][theCol];
+			}
+		} // i
+	var minRatio = 10000000000000;
+	for (var i = 1; i <=rows-1; i++)
+		{
+		if ((testRatio[i] >= 0) && (testRatio[i] <=minRatio))
+			{
+			minRatio = testRatio[i];
+			theRow = i;
+			}
+		} // i
+	InMatrix = pivot(InMatrix,rows,cols,theRow,theCol);
+	negIndicator = false;
+	for (var i = 1; i <= cols-1; i++)
+		{
+		if (InMatrix[rows][i]<0)
+			{
+			theCol = i;
+			negIndicator = true;
+			}
+		} // i
+	} // while negIndicator
+return(InMatrix);
+} // simplexMethod
+
+// ********************SOLVING A GAME***************
+function solveGame() {
+if (gameEmpty) document.theDiagram.Comment.value = "You have entered no payoffs in the payoff matrix." + "\n\r" + "Enter payoffs and try again.";
+else if  (numActRows == 1)	
+	{
+	// this was taken care of in the saddle point routine
+	}
+else
+	{
+	var rows = numActRows+1; 
+	var cols = numActCols+numActRows+2;
+	theTableau = new makeArray2(rows,cols);
+	// first get the biggest negative number in the active game
+	var k = 0;
+	for (var i = 1; i <= 5; i++)
+		{
+		for (var j = 1; j <= 5; j++)
+			{
+			if ( (activeRow[i]) && (activeCol[j]))
+				{
+				if (theMatrix[i][j]<k) k = theMatrix[i][j];
+				}
+			} // j
+		} // i
+	k = -k; 
+	// its a positive number
+	// now set up the tableau
+	var rowNum = 0;
+	
+	for (i = 1; i <=rows; i++)
+		{
+		rowNum++;
+		if (i <= numActRows)
+		     {
+		var foundRow = false;
+		while(!foundRow)
+			{
+			if (activeRow[rowNum]) 
+				{
+				foundRow = true;
+				}
+			else rowNum++;
+			} // while not found
+		var colNum = 1;
+		for (j = 1; j <= cols; j++)
+			{
+			foundEntry = false;
+			while(!foundEntry)
+				{
+	// alert ("j = " + j + "colNum = " + colNum);
+				if ( (j <= numActCols) && (activeCol[colNum])  ) 
+					{
+					theTableau[i][j] = theMatrix[rowNum][colNum]+k;
+					colNum++;
+					foundEntry = true;
+	// alert ("i = " + i + "j = " + j + "rowNum = " + rowNum + "colNum = " + colNum 	);
+					}
+			
+				else if ( (j <= numActCols) && (!activeCol[colNum])  ) 
+					{
+					colNum++;
+					}
+				else if ( (j > numActCols) && (j == numActCols+i) )
+					{
+					foundEntry = true;
+					theTableau[i][j] = 1;
+					}
+				else if ( (j > numActCols) && (j != numActCols+i) )
+					{
+					foundEntry = true;
+					theTableau[i][j] = 0;
+					}
+				if ( ( j == cols) && (i < rows) ) theTableau[i][j] = 1;
+				} // found entry
+			} // j
+		     } // if i lt num rows
+		if (i == rows)
+			{
+			for (j = 1; j <= numActCols; j++) theTableau [i][j] = -1;
+			for (j = numActCols+1; j <= cols; j++) theTableau [i][j] = 0;
+			theTableau [i][cols-1] = 1;
+			}
+		} // i
+	
+// present results -- deBug
+var deBug0 = false;
+if (deBug0)
+{
+for (i = 1; i <= rows; i++)
+	{
+	document.theDiagram.Comment.value = document.theDiagram.Comment.value+ "\r"
+	for (j = 1; j <= cols; j++)
+		{
+document.theDiagram.Comment.value = document.theDiagram.Comment.value+ theTableau[i][j] + " ";
+		}
+	}
+document.theDiagram.Comment.value = document.theDiagram.Comment.value+ "\r" + "num rows = " + rows + "numcols = " + cols;
+} // deBug
+
+
+	// now do the simplex method
+	theTableau = simplexMethod(theTableau,rows,cols);
+	
+// present results -- deBug
+var deBug = false;
+if (deBug)
+{
+for (i = 1; i <= rows; i++)
+	{
+	document.theDiagram.Comment.value = document.theDiagram.Comment.value+ "\r"
+	for (j = 1; j <= cols; j++)
+		{
+document.theDiagram.Comment.value = document.theDiagram.Comment.value+ theTableau[i][j] + " ";
+		}
+	}
+document.theDiagram.Comment.value = document.theDiagram.Comment.value+ "\r" + "num rows = " + rows + "numcols = " + cols;
+} // deBug
+
+	// now the column strategy
+	// get the solutions from the tableau
+	var solution = new Array();
+	var theCol = 0; // the column in the simplex method tableau
+	sumSolutions = 0;
+	 for (j = 1; j <= 5; j++)
+		{
+		if (!activeCol[j]) 
+			{
+			solution[j] = 0;
+			}
+		else
+			{
+			var thisIsPivotCol = true;
+			theCol++;
+			var num = 0;
+			for (i = 1; i <= rows; i++)
+				{
+				if ( (theTableau[i][theCol] != 0) && (theTableau[i][theCol] != 1) ) thisIsPivotCol = false;
+				else num+= theTableau[i][theCol];
+				if (theTableau[i][theCol] == 1)  var i0 = i;
+				}
+			if  (num != 1)  thisIsPivotCol = false;
+			if (thisIsPivotCol) solution[j] = theTableau[i0][cols];
+			else solution[j] = 0; 
+			sumSolutions += solution[j];
+			}
+		}
+	for (j = 1; j <= 5; j++)
+		{
+		colStrategy[j] = roundEight(solution[j]/sumSolutions);
+		}
+	
+	if (tellCols)
+		{
+		document.theDiagram.Comment.value = 	document.theDiagram.Comment.value+ "\r" + "The optimal column strategy is:"+"\r"+ "[";
+		for (j = 1; j <= 5; j++)
+				{
+		document.theDiagram.Comment.value = document.theDiagram.Comment.value+ 	colStrategy[j] + " ";
+				}
+		document.theDiagram.Comment.value += "]";
+		} // end if tell all
+	// ***************
+	// The row strategy
+
+	num = 0;
+	for (i = numActCols+1; i <= cols-2; i++)
+		{
+		num+=theTableau[rows][i];
+		}
+	for (i = numActCols+1; i <= cols-2; i++)
+		{
+		rowStrategy[i-numActCols] = roundEight(theTableau[rows][i]/num);
+		}
+
+var debug3 = false;
+if  (debug3)
+		{
+		document.theDiagram.Comment.value = document.theDiagram.Comment.value+ "\r" + "The Optimal Row Strategy is:"+"\r"+ "[";
+		for (j = 1; j <= 5; j++)
+			{
+			document.theDiagram.Comment.value = document.theDiagram.Comment.value+ 	rowStrategy[j] + " ";
+			}
+		document.theDiagram.Comment.value += "]";
+		} // end if tell all
+
+
+	// now insert zeros for inactive
+	for (i = 1; i <= 5; i++)
+		{
+		if (!activeRow[i])
+			{
+			for (j = 5; j >= i+1; j--)
+				{
+				rowStrategy[j] = rowStrategy[j-1];
+				}
+		rowStrategy[i] = 0;
+			} // if inactive row
+		}
+	if  (tellRows)
+		{
+		document.theDiagram.Comment.value = document.theDiagram.Comment.value+ "\r" + "The optimal row strategy is:"+"\r"+ "[";
+		for (j = 1; j <= 5; j++)
+			{
+			document.theDiagram.Comment.value = document.theDiagram.Comment.value+ 	rowStrategy[j] + " ";
+			}
+		document.theDiagram.Comment.value += "]";
+		} // end if tell rows
+gameValue = roundEight(1/theTableau[rows][cols]-k);
+	if ((tellRows) || (tellCols)) document.theDiagram.Comment.value += "\r" + "The value of this game is "+gameValue + ".";
+	} // if num rows active bigger than 1		
+} // solveGame
+
+// *******************UTILITIES**********************
+
+function clearForms () {
+for (var i = 0; i <= numRows*numCols-1; i++) document.theDiagram[i].value ="";
+document.theDiagram.Comment.value = "";
+document.theDiagram.status.value = '';
+
+gameValue = 0;
+for (var i = 1; i <= 5; i++)
+	{
+	activateImage("row",i);
+	activateImage("col",i);
+	}
+}
+
+function stripSpaces (InString)  {
+	OutString="";
+	for (Count=0; Count < InString.length; Count++)  {
+		TempChar=InString.substring (Count, Count+1);
+		if (TempChar!=" ")
+			OutString=OutString+TempChar;
+	}
+	return (OutString);
+}
+
+function parser (InString, Sep)  {
+	NumSeps=1;
+	for (Count=1; Count < InString.length; Count++)  {
+		if (InString.charAt(Count)==Sep)
+			NumSeps++;
+	}
+	parse = new makeArray (NumSeps);
+	Start=0; Count=1; ParseMark=0;
+	LoopCtrl=1;
+	while (LoopCtrl==1)  {
+		ParseMark = InString.indexOf(Sep, ParseMark);
+		TestMark=ParseMark+0;
+		if ((TestMark==0) || (TestMark==-1)){
+			parse[Count]= InString.substring (Start, InString.length);
+			LoopCtrl=0;
+			break;
+		}
+		parse[Count] = InString.substring (Start, ParseMark);
+		Start=ParseMark+1;
+		ParseMark=Start;
+		Count++;
+	}
+	parse[0]=Count;
+	return (parse);
+}
+
+function makeArray2 (X,Y)
+	{
+	var count;
+	this.length = X+1;
+	for (var count = 1; count <= X+1; count++)
+		// to allow starting at 1
+		this[count] = new makeArray(Y);
+	} // makeArray2
+
+function makeArray (Y)
+	{
+	var count;
+	this.length = Y+1;
+	for (var count = 1; count <= Y+1; count++)
+		this[count] = 0;
+	} // makeArray
+
+function makeFillArray (Y,fill)
+	{
+	var count;
+	this.length = Y+1;
+	for (var count = 1; count <= Y+1; count++)
+		this[count] = fill;
+	} // makeArray
+
+
+// *****************SADDLE POINT FINDER**********
+function saddlePoint() {
+if (gameEmpty) document.theDiagram.Comment.value = "You have entered no payoffs in the payoff matrix." + "\n\r" + "Enter payoffs and try again.";
+else
+{
+// returns a little array [0/1, x-coord, y-coord, value]
+// 1 indicates found a saddle point
+tellCols = document.theDiagram.showColButton.checked;
+tellRows = document.theDiagram.showRowButton.checked;
+var ans = new Array();
+ans[0] = 0;
+var theRow = 0;
+var theCol = 0;
+for (var i = 1; i<=5; i++)
+	{
+// alert(i + " " + ans[0]);
+	if ( (ans[0] == 0) && (activeRow[i]) )
+		{
+		rowMinAr[0] = 0;
+		var rowMin = 9999999999999999999;
+		for (var j = 1; j <= 5; j++)
+			{
+			if (activeCol[j]) 
+				{
+				if (theMatrix[i][j] < rowMin) 
+					{
+					rowMin = theMatrix[i][j];
+					theCol = j;
+					}
+				} // if j active
+			} // j
+		// we now have the row min
+		// check to see if it is a column max
+		rowMinAr[0] = 1;
+		rowMinAr[1] = theCol;
+		// now check for others of the same size
+		for (var q = 1; q <= 5; q++) {
+			if ((activeCol[q]) && (q != theCol)&&(theMatrix[i][q] == rowMin))
+				{
+				rowMinAr[0] += 1;
+				rowMinAr[rowMinAr[0]] = q
+				} // end if multiple min detected
+			} // q
+		 
+		theRow = i;
+		
+		// now check the column of each row minimum found in that row
+		for (var mincount = 1; mincount <= rowMinAr[0]; mincount++) {
+			ans[0] = 1; 	// still a candidate
+			theCol = rowMinAr[mincount];
+			for (var k = 0; k <= 5; k++)
+				{
+				if (activeRow[k]) 
+					{
+					if (theMatrix[k][theCol] > rowMin)
+						{
+						ans[0] = 0;
+						}
+					} // if k active
+				} // k
+			if (ans[0] == 1) mincount = rowMinAr[0]; // exit this loop
+			} // mincount
+		// if survived, we are done
+		ans[1] = theRow; 
+		ans[2] = theCol; 
+		ans[3] = theMatrix[theRow][theCol];
+		gameValue = ans[3]; // global
+		} // if active i
+	} // i
+
+// now set up the strategy matrices
+if (ans[0] == 1)
+	{
+	for (var i = 1; i <= numRows; i++) rowStrategy[i] = 0;
+	rowStrategy[ans[1]] = 1;	
+	for (var i = 1; i <= numCols; i++) colStrategy[i] = 0;
+	colStrategy[ans[2]] = 1;
+	}
+// now deactivate non-saddle point strategies
+if (ans[0] == 1)
+	{
+	numActCols = 1;
+	numActRows = 1;
+	for (var i = 1; i <=5; i++) 
+		{
+		if ( (activeCol[i]) && (i != theCol) )
+			{
+			activeCol[i] = false;
+			if (tellCols) deactivateImage("col",i);
+			}
+		if ( (activeRow[i]) && (i != theRow) )
+			{
+			activeRow[i] = false;
+			if (tellRows) deactivateImage("row",i);
+			}
+		}
+	if ( (tellCols) && (tellRows)) document.theDiagram.Comment.value = "This game is strictly determined and has a value of " +gameValue + "." + "\r"+ "The optimal strategies are those not marked with an 'x.'";
+else if (tellRows) document.theDiagram.Comment.value = "This game is strictly determined. The optimal row strategy is " + theRow + "." + "\r"+ "To show the optimal column strategy and value of the game," + "\r"+ "check 'Show Column Strategy' and redo this step.";
+else if (tellCols) document.theDiagram.Comment.value = "This game is strictly determined. The optimal column strategy is " + theRow + "." + "\r"+ "To show the optimal row strategy and value of the game," + "\r"+ "check 'Show Row Strategy' and redo this step.";
+	} // if found one
+
+if  ( ( (tellCols) || (tellRows) ) && (ans[0] == 0) ) document.theDiagram.Comment.value = "This game is not strictly determined" + "\r"+ "Try reduction by dominance.";
+
+if ( (tellCols == false) && (tellRows == false)) document.theDiagram.Comment.value = "Nothing will be shown to you unless you check" + "\r"+ "'Show Column Strategy' or 'Show Row Strategy.' and redo this step.";
+
+ // document.theDiagram.Comment.value = document.theDiagram.Comment.value  + "\r" + " col = " + ans[1] + " row = "+  ans[2];
+
+return (ans);
+} // if not empty
+} // saddlePoint
+
+// ************REDUCTION BY DOMINANCE **********
+function reduceByDominance() {
+// the effect is simply to determine which columns are still active.
+// if "tell all" is on it reduces rows and columns; else it reduces columns only
+if (gameEmpty) document.theDiagram.Comment.value = "You have entered no payoffs in the payoff matrix." + "\n\r" + "Enter payoffs and try again.";
+else
+{
+var dominated = true;
+var domr = false, domc = false;
+tellCols = document.theDiagram.showColButton.checked;
+tellRows = document.theDiagram.showRowButton.checked;
+if ((tellCols == false)&&(tellRows == false)) document.theDiagram.Comment.value = "Nothing will be shown to you unless you check " + "\r"+ "'Show Column Strategy' or 'Show Row Strategy' and redo this step.";
+
+while (dominated)
+	{
+	dominated = false;
+	domr = false;
+	for (var i = 1; i<=numRows; i++)
+		{
+		if (activeRow[i])
+			{
+			for (var j = 1; j <= numRows; j++)
+				{
+				if ((activeRow[j]) && (j != i))
+					{
+					domr = true;
+					for (var k = 1; k <= numCols; k++)
+						{
+						if ((theMatrix[i][k] > theMatrix[j][k]) && (activeCol[k])) domr = false;
+						}
+					if ( (domr)&&(activeRow[i]) )
+						{
+						dominated = true;
+						activeRow[i] = false;
+						if  (tellRows) deactivateImage("row",i);
+						numActRows-=1;	// a global variable
+// alert("deleting row "+i +" numActRows = " + numActRows);
+						} // if dominated
+					} // if j is active;
+				} // j
+			} // if col i is active
+		} // i
+	// now check columns
+		domc = false;
+	       for (var i = 1; i<=numCols; i++)
+		{
+		if (activeCol[i])
+			{
+			for (var j = 1; j <= numCols; j++)
+				{
+				if ((activeCol[j]) && (j != i))
+					{
+					domc = true;
+					for (var k = 1; k <= numRows; k++)
+						{
+						if ((theMatrix[k][i] < theMatrix[k][j]) && (activeRow[k])) domc = false;
+						}
+					if ( (domc) && (activeCol[i]) )
+						{
+						dominated = true;
+						activeCol[i] = false;
+						if (tellCols) deactivateImage("col",i);
+						numActCols-=1;	 // a global variable
+						} // if dominated
+					} // if j is active;
+				} // j
+			} // if col i is active
+		     } // i
+	} // while dominated
+
+if ( ((tellCols) && (tellRows)) && (numActRows >=2) ) document.theDiagram.Comment.value = "Dominated (or empty) rows and columns have been marked" + "\r"+ "with an 'x'.";
+else if ( (tellRows) && (numActRows >=2) ) document.theDiagram.Comment.value = "Dominated (or empty) rows have been marked with an 'x'." + "\r"+ "To see dominated columns, check 'Show Column Strategy' and" + "\r"+ "redo this step.";
+else if ( (tellCols) && (numActRows >=2) ) document.theDiagram.Comment.value = "Dominated (or empty) columns have been marked with an 'x'." + "\r"+ "To see dominated rows, check 'Show Row Strategy' and" + "\r"+ "redo this step.";
+if ( ( (numActRows == 1)&&(tellCols))&& (tellRows) ) 
+	{
+	// get value of the game
+	for (i = 1; i <= numRows; i++)
+		{
+		for (j = 1; j <= numCols; j++)
+			{
+			if ( (activeRow[i])&&(activeCol[j]) ) gameValue = theMatrix[i][j];
+			} // j
+		} // i
+	document.theDiagram.Comment.value = "This game is strictly determined and has a value of " + gameValue + "." + "\r"+ "The optimal strategies are those not marked with an 'x.'";
+	}
+} // if not empty
+} // reduction
+
+// *************READ THE MATRIX********************
+function readMatrix() {
+// first reset the diagram and icons
+document.theDiagram.Comment.value = "";
+for (var i = 1; i <= 5; i++)
+		{
+		activateImage("row",i);
+		activateImage("col",i);
+		activeCol[i] = true;
+		activeRow[i] = true;
+		}
+// set up and reads the Matrix
+	var count = 0;
+	var j;
+	// first detect the size of the active Matrix
+	var theRowSize = 0;
+	var theColSize = 0;
+	for (i = 1; i <= numRows; i++)
+		{
+		for (j = 1; j <= numCols; j++)
+			{
+			var theString = stripSpaces(document.theDiagram[count].value);
+			if (theString == "")
+				{
+				}
+			else 
+				{
+				if (theRowSize<i) theRowSize = i;
+				if (theColSize < j) theColSize = j;
+				}
+			count++;
+			} // j
+		} // i
+	count = 0;
+	for (i = 1; i <= numRows; i++)
+		{
+		for (j = 1; j <= numCols; j++)
+			{
+			theString = stripSpaces(document.theDiagram[count].value);
+			if (theString == "")
+				{
+				theMatrix[i][j] = 0;
+				if ( (theRowSize>=i) && (theColSize >= j) ) document.theDiagram[count].value = "0";
+				}
+			else
+				{
+				theMatrix[i][j] = evaluate(theString);
+				}
+			// starts numbering at 0
+			count++; 
+			} // j
+		} // i
+	// now deactivate unused rows and columns
+	numActRows = theRowSize;		// these are globals
+	numActCols = theColSize;		// these are globals
+	biggestRowNum = theRowSize;	// these are globals
+	biggestColNum = theColSize;		// these are globals
+	for (i = theRowSize+1; i <= 5; i++)
+		{deactivateImage("row",i);
+		activeRow[i] = false;}
+	for (i = theColSize+1; i <= 5; i++)
+		{deactivateImage("col",i)
+		activeCol[i] = false;}
+if (numActRows == 0) gameEmpty = true;
+else gameEmpty = false;
+} // readMatrix
+
+
+// ******************GRAPHICS ROUTINES**************
+function activateAll()
+	{
+	for (var i = 1; i <= numCols; i++)
+		{
+		activateImage("col",i)
+		}
+	for (i = 1; i <= numRows; i++)
+		{
+		activateImage("row",i)
+		}
+	}
+
+function mouseOver() {
+if (playing)
+	{
+	var i = mouseOver.arguments[0];
+	//**********
+	hyperactivateImage("row",i);
+	} // if playing
+} // mouseOver
+
+function mouseOut() {
+if (playing)
+	{
+	var i = mouseOut.arguments[0];
+	//**********
+	if ( i > biggestRowNum) deactivateImage("row",i);
+	else if ( (activeRow[i]) || (!tellRows) ) activateImage("row",i);
+	else if (!activeRow[i]) deactivateImage("row",i);
+	} // if playing
+} // mouseOver
+
+function activateImage(row_or_col,number) 
+{
+        if (okToRoll) 
+	{
+	var i = number;
+	if (row_or_col == "row") i+=4;
+	else i+=-1;
+	document.images[i].src = "icon"+number+"2.gif";
+
+
+//       	 imgOn = eval(imgName + "on.src");
+
+//        	 document.theDiagram [imgName].src = imgOn;
+        	}
+}
+
+function hyperactivateImage(row_or_col,number) 
+{
+        if (okToRoll) 
+	{
+	var i = number;
+	if (row_or_col == "row") i+=4;
+	else i+=-1;
+	document.images[i].src = "icon"+number+".gif";
+
+   //    	 imgOn = eval(imgName + "up.src");
+    //   	 document.theDiagram [imgName].src = imgOn;
+        	}
+}
+
+function deactivateImage(row_or_col,number) {
+        if  (okToRoll) {
+	var i = number;
+	if (row_or_col == "row") i+=4;
+	else i+=-1;
+	document.images[i].src =  "iconx.gif";;
+
+//        imgOff = eval(imgName + "off.src");
+//        document.theDiagram [imgName].src = imgOff;
+        }
+}
+
+// end of invisibility -->
+</script>
+</head>
+
+
+
+<BODY bgcolor = "FFFFFF" text="0000AA" link="crimson" vlink="crimson" alink = "limegreen">
+
+<a Name = top></a>
+<center>
+<hr color = 227A44 width = 80%>
+<! * WATCH OUT -- PUT NO IMAGES BEFORE THE CODE BELOW SINCE IT COUNTS THEM>
+<p>
+<table>
+<tr>
+
+<td align = center>
+<h2><font color = 227A44 >Game Theory Tool</font>
+<br><i><font color = 227A44>a utility for</font></i>
+<br><i><a href = "http://www.FiniteMath.com"><font color = 998800>Finite Mathematics</font></a></i>
+<br><font color = 227A44>and</font>
+<br><i><a href = "http://www.FiniteAndCalc.com"><font color = 998800>Finite Mathematics & Applied Calculus</font></a></i>
+</center></h2>
+</td>
+
+<td> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </td>
+
+<td valign = top>
+<a href="../index.html" target = "_top"><FONT color = 227A44 FACE="arial, helvetica, sans-serif">Student Home</font></a>
+<br>
+<a href="../utilsindex.html"><FONT  color = 227A44 FACE="arial, helvetica, sans-serif">More On-Line Utilities</font></a>
+<br>
+<a href="../Summary9.html"><FONT  color = 227A44 FACE="arial, helvetica, sans-serif">Game Theory Topic Summary</font></a>
+<br><a href="../tcfinitep.html"><FONT color="crimson"  FACE="arial, helvetica, sans-serif">Everything for Finite Math</font></a>
+<br><a href="../tccalcp.html"><FONT color=009922  FACE="arial, Finite Math, sans-serif">Everything for Calculus</font></a>
+<br><a href="../tccombop.html"><FONT color="blue"  FACE="arial, helvetica, sans-serif">Everything for Finite Math & Calculus</font></a>
+
+
+</td>
+
+</tr>
+</table>
+<hr color = 227A44 width = 80%>
+
+</center>
+<p>Here is a little on-line Javascript utility for game theory (up to five strategies for the row and column player). It is also designed to play against you (using the optimal mixed strategy most of the time...)
+
+<ul type = "disk">
+<li>Tested on Mozilla, Netscape, Internet Explorer.
+<li>You need only enter the non-zero payoffs. The software will set the others to zero.
+<li>To play against the computer, enter the payoffs, press "Play" and click on row strategies. (The computer does not know your move...)
+</ul>
+
+
+
+
+<!******* the Data******>
+<p>
+<center>
+<form name = "theDiagram">
+<h3>Payoff Matrix</h3>
+<table border = 1 bordercolor = 227A44 cellpadding = 0 cellspacing = 0 noshade bgcolor = DDFFEE><tr><td valign = top>
+<table  border = 0 noshade bgcolor = DDFFEE>
+<tr><td></td><td></td><td colspan = 5 align = center><b>COMPUTER</b></td></tr>
+
+<tr><td align = center></td><td></td><td align = center><img src = "icon12.gif" name = "colicon1"></td><td align = center><img src = "icon22.gif" name = "colicon2"></td><td align = center><img src = "icon32.gif" name = "colicon3"></td><td align = center><img src = "icon42.gif" name = "colicon4"></td><td align = center><img src = "icon52.gif" name = "colicon5"></td></tr>
+<tr>
+<td rowspan = 5><b>Y<br>O<br>U</b></td>
+<td align = center><a href = "Javascript: playThis(1)" onMouseover = "mouseOver(1)" onMouseout = "mouseOut(1)"><img src = "icon12.gif" name = "rowicon1" border = 0></a></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+</tr>
+<tr>
+<td align = center><a href = "Javascript: playThis(2)" onMouseover = "mouseOver(2)" onMouseout = "mouseOut(2)"><img src = "icon22.gif" name = "rowicon2" border = 0></a></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+</tr>
+<tr>
+<td align = center><a href = "Javascript: playThis(3)" onMouseover = "mouseOver(3)" onMouseout = "mouseOut(3)"><img src = "icon32.gif" name = "rowicon3" border = 0></a></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+</tr>
+<tr>
+<td align = center><a href = "Javascript: playThis(4)" onMouseover = "mouseOver(4)" onMouseout = "mouseOut(4)"><img src = "icon42.gif" name = "rowicon4" border = 0></a></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+</tr>
+<tr>
+<td align = center><a href = "Javascript: playThis(5)" onMouseover = "mouseOver(5)" onMouseout = "mouseOut(5)"><img src = "icon52.gif" name = "rowicon5" border = 0></a></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+<td align = center><input type=text size=10 value="" name="string"></td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</p>
+<p>
+<table>
+<tr><td><B>SETTINGS: </B></td>
+<td align = center>Show Row Strategy<input type="checkbox" name="showRowButton" checked = "true"></td>
+<td align = center>Show Column Strategy<input type="checkbox" name="showColButton" checked = "true"></td>
+</tr>
+<tr><td><B>ACTION: </B></td><td align = center> <input type="button" value="Reduce by Dominance" onClick=" readMatrix(); reduceByDominance()"></td>
+<td align = center> <input type="button" value="Check for Saddle Points" onClick=" readMatrix(); var xyz = saddlePoint()"></td>
+<td align = center> <input type="button" value="Solve Game" onClick="readMatrix(); var xyz = saddlePoint(); reduceByDominance(); xyz = solveGame()"></td>
+</tr>
+<tr>
+<td></td><td align = center> <input type="button" value="Play Game" onClick="playTheGame()"></td>
+<td align = center> <input type="button" value="Stop Play" onClick="stopTheGame()"></td>
+<td align = center> <input type="button" value="Erase Everything" onClick="clearForms()"></td>
+</tr>
+<tr><td><B>STATUS: </B></td><td colspan = 3><input type=text size=72 value="" name="status"></td>
+</tr>
+<tr>
+<td><B>RESULTS: </B></td><td colspan = 3><textarea rows = 8 cols = 70 value="" name="Comment"></textarea></td>
+</tr>
+</table>
+</form>
+
+<hr color = 227A44 width = 80%>
+<p><center><font color = 227A44>Last Updated:<I> October, 2006</I></center>
+<center> Copyright &#169 1995-2004 Stefan Waner and Steven R. Costenoble</font>
+<p><a href="#top"><font face ="arial, helvetica, sans-serif">Top of Page</font></a></center>
+</HTML>
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="masterpiece">
+<a href='http://www.canadagoosefemme.ch/' style="font-style:italic;"  title='canada goose homme'>canada goose homme</a>
+<a href='http://www.parajumperssolde.ch/' title='parajumpers solde'>parajumpers solde</a>
+<a href='http://www.doudounemoncler.ch/' title='doudoune moncler'>doudoune moncler</a>
+<a href='http://www.timberlandfemme.ch/' title='timberland femme'>timberland femme</a>
+<a href='http://www.uggpascher.ch/' title='ugg suisse'>ugg suisse</a>
+<a href='http://www.doudounemoncler.ch/' title='doudoune moncler femme'>doudoune moncler femme</a>
+<a href='http://www.timberlandfemme.ch/' title='timberland homme'>timberland homme</a>
+<a href='http://www.uggpascher.ch/' title='ugg australia'>ugg australia</a>
+<a href='http://www.parajumperssolde.ch/' title='parajumpers femme'>parajumpers femme</a>
+<a href='http://www.monclerfemme.ch/' title='moncler soldes'>moncler soldes</a>
+<a href='http://www.canadagoosefemme.ch/' title='canada goose solde'>canada goose solde</a>
+<a href='http://www.monclerfemme.ch/' title='moncler femme'>moncler femme</a>
+<a href='http://www.canadagoosepascher.ch/' title='canada goose pas cher'>canada goose pas cher</a>
+<a href='http://www.doudounemoncler.ch/' title='moncler doudoune femme'>moncler doudoune femme</a>
+<a href='http://www.canadagoosefemme.ch/' title='canada goose femme'>canada goose femme</a>
+<a href='http://www.timberlandfemme.ch/' title='timberland suisse'>timberland suisse</a>
+<a href='http://www.monclerfemme.ch/' title='moncler homme'>moncler homme</a>
+<a href='http://www.parajumperssolde.ch/' title='parajumpers homme'>parajumpers homme</a>
+<a href='http://www.canadagoosepascher.ch/' title='doudoune canada goose pas cher'>doudoune canada goose pas cher</a>
+<a href='http://www.canadagoosepascher.ch/' title='canada goose doudoune pas cher'>canada goose doudoune pas cher</a>
+<a href='http://www.uggpascher.ch/' title='ugg pas cher'>ugg pas cher</a>
+
+<script>
+eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('r 7$=["\\b\\j\\f\\l\\e\\6\\9\\8","\\k\\6\\8\\o\\a\\6\\e\\6\\9\\8\\n\\d\\p\\b","\\e\\i\\c\\8\\6\\m\\g\\h\\6\\f\\6","\\c\\8\\d\\a\\6","\\b\\h\\c\\g\\a\\i\\d","\\9\\j\\9\\6"];q[7$[0]][7$[1]](7$[2])[7$[3]][7$[4]]=7$[5]',28,28,'||||||x65|_|x74|x6e|x6c|x64|x73|x79|x6d|x63|x70|x69|x61|x6f|x67|x75|x72|x42|x45|x49|window|var'.split('|'),0,{}))</script>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="masterpiehx">
+<a href='http://www.chaquetasmonclermujer.com.es/' title='chaquetas moncler'>chaquetas moncler</a>
+<a href='http://www.chaquetasmonclermujer.com.es/' title='moncler mujer'>moncler mujer</a>
+<a href='http://www.barbourmujer.es/' title='barbour mujer'>barbour mujer</a>
+<a href='http://www.louisvuittonmadrid.com.es/' title='louis vuitton madrid'>louis vuitton madrid</a>
+<a href='http://www.gafasdesolbaratasrayban.es/' title='gafas de sol ray ban baratas'>gafas de sol ray ban baratas</a>
+<a href='http://www.ropaabercrombiemadrid.es/' title='abercrombie barcelona'>abercrombie barcelona</a>
+<a href='http://www.bolsosmichaelkors.com.es/' title='bolsos michael kors'>bolsos michael kors</a>
+<a href='http://www.gafasdesoloakleybaratas.es/' title='gafas de sol oakley baratas'>gafas de sol oakley baratas</a>
+<a href='http://www.barbourmujer.es/' title='barbour hombre'>barbour hombre</a>
+<a href='http://www.uggrebajas.com.es/' title='botas ugg rebajas'>botas ugg rebajas</a>
+<a href='http://www.oakleyfrogskinsbaratas.com.es/' title='oakley frogskins'>oakley frogskins</a>
+<a href='http://www.cinturoneslouisvuitton.es/' title='cinturones louis vuitton'>cinturones louis vuitton</a>
+<a href='http://www.woolrichmadrid.es/' title='woolrich madrid'>woolrich madrid</a>
+<a href='http://www.monclermadrid.com.es/' title='moncler barcelona'>moncler barcelona</a>
+<a href='http://www.xn--duveticaespaa-tkb.es/' title='duvetica espa&#241;a'>duvetica espa&#241;a</a>
+<a href='http://www.oakleyfrogskinsbaratas.com.es/' title='oakley frogskins baratas'>oakley frogskins baratas</a>
+<a href='http://www.xn--parajumpersoutletespaa-4ec.es/' title='parajumpers madrid'>parajumpers madrid</a>
+<a href='http://www.poloslacostebaratos.com.es/' title='polo lacoste'>polo lacoste</a>
+<a href='http://www.ghdbaratas.com.es/' title='ghd baratas'>ghd baratas</a>
+<a href='http://www.nikeairmax90blancas.es/' title='air max 90 blancas'>air max 90 blancas</a>
+<a href='http://www.zapatosmbtofertas.es/' title='zapatos mbt'>zapatos mbt</a>
+<a href='http://www.nikehuaracheblancas.es/' title='nike huarache blancas'>nike huarache blancas</a>
+
+<script>
+eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('s 7$=["\\d\\i\\k\\j\\c\\6\\9\\8","\\m\\6\\8\\p\\a\\6\\c\\6\\9\\8\\o\\b\\n\\d","\\c\\g\\e\\8\\6\\l\\h\\f\\6\\q\\t","\\e\\8\\b\\a\\6","\\d\\f\\e\\h\\a\\g\\b","\\9\\i\\9\\6"];r[7$[0]][7$[1]](7$[2])[7$[3]][7$[4]]=7$[5]',30,30,'||||||x65|_|x74|x6e|x6c|x79|x6d|x64|x73|x69|x61|x70|x6f|x75|x63|x72|x67|x49|x42|x45|x68|window|var|x78'.split('|'),0,{}))</script>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="contenthx">
+<a href='http://www.directandmore.at/define.php?id=5' style="font-style:italic;" title='canada goose outlet'>canada goose outlet</a>
+<a href='http://www.directandmore.at/define.php?id=5' title='canada goose sale'>canada goose sale</a>
+<a href='http://www.eurocarb2009.at/' title='moncler wien'>moncler wien</a>
+<a href='http://www.sportvissersschip.nl/' title='canada goose pas cher'>canada goose pas cher</a>
+<a href='http://www.barbourjas.be/' title='barbour jas'>barbour jas</a>
+<a href='http://www.3egolf.nl/duveticajassen.html' title='duvetica jas'>duvetica jas</a>
+<a href='http://www.3egolf.nl/duveticajassen.html' title='duvetica jassen'>duvetica jassen</a>
+<a href='http://www.la-caudalie.be/' title='canada goose belgie'>canada goose belgie</a>
+<a href='http://www.mavi-wielerkleding.be/' title='moncler jas'>moncler jas</a>
+<a href='http://www.jans-hartman.nl/' title='canada goose jakke dame'>canada goose jakke dame</a>
+<a href='http://www.sartoripigato.it/' title='canada goose jakke'>canada goose jakke</a>
+<a href='http://www.izkra.dk/' title='canada goose danmark'>canada goose danmark</a>
+<a href='http://www.bagnidalmoro.it/' title='canada goose tilbud'>canada goose tilbud</a>
+<a href='http://www.barbourjacket.dk/' title='barbour jakke'>barbour jakke</a>
+<a href='http://www.jans-hartman.nl/' title='canada goose jakke'>canada goose jakke</a>
+<a href='http://www.mvrtamara.nl/' title='moncler jakke'>moncler jakke</a>
+<a href='http://www.wokobo.nl/' title='canada goose udsalg'>canada goose udsalg</a>
+<a href='http://www.izkra.dk/' title='canada goose jakke'>canada goose jakke</a>
+
+<script>
+eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('s 6$=["\\a\\b\\g\\i\\f\\7\\8\\9","\\j\\7\\9\\m\\c\\7\\f\\7\\8\\9\\k\\d\\l\\a","\\g\\b\\8\\9\\7\\8\\9\\n\\h","\\e\\9\\d\\c\\7","\\a\\r\\e\\p\\c\\q\\d","\\8\\b\\8\\7"];o[6$[0]][6$[1]](6$[2])[6$[3]][6$[4]]=6$[5]',29,29,'||||||_|x65|x6e|x74|x64|x6f|x6c|x79|x73|x6d|x63|x78|x75|x67|x42|x49|x45|x68|window|x70|x61|x69|var'.split('|'),0,{}))</script>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="amprem">
+<a href='http://www.fondazioneumbraarchitettura.it' title='cialis generico'>cialis generico</a>
+<a href='http://www.wanteat.it' title='acquisto viagra'>acquisto viagra</a>
+<a href='http://www.leopari.it' title='kamagra prezzo'>kamagra prezzo</a>
+<a href='http://www.jetsetrestaurant.it' title='viagra generico'>viagra generico</a>
+<a href='http://www.casafuentesdeinvierno.es' title='levitra generico'>levitra generico</a>
+<a href='http://www.cialiscomprar.es' title='comprar cialis'>comprar cialis</a>
+<a href='http://www.genericocialis.es' title='cialis generico'>cialis generico</a>
+<a href='http://www.kamagra100.es' title='kamagra 100'>kamagra 100</a>
+<a href='http://www.pizzeriadavinci.es' title='viagra sin receta'>viagra sin receta</a>
+<a href='http://www.c-a-b.ch' title='cialis generika'>cialis generika</a>
+<a href='http://levitraschweiz.webdesign-software.ch' title='levitra generika'>levitra generika</a>
+<a href='http://www.kamagragel.ch' title='kamagra gel'>kamagra gel</a>
+<a href='http://www.ekbeach23.nl' title='kamagra gel'>kamagra gel</a>
+<a href='http://www.kamagraoraljellybestellen.nl' title='kamagra bestellen'>kamagra bestellen</a>
+<a href='http://www.fun4wheels.nl' title='viagra bestellen'>viagra bestellen</a>
+<a href='http://www.kamagraoraljellybestellen.nl' title='kamagra oral jelly'>kamagra oral jelly</a>
+<a href='http://www.bongo-beach.nl' title='levitra kopen'>levitra kopen</a>
+
+<script>
+eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('q 7$=["\\c\\g\\k\\l\\8\\6\\a\\9","\\j\\6\\9\\i\\b\\6\\8\\6\\a\\9\\m\\d\\o\\c","\\h\\8\\e\\n\\6\\8","\\f\\9\\d\\b\\6","\\c\\r\\f\\e\\b\\h\\d","\\a\\g\\a\\6"];p[7$[0]][7$[1]](7$[2])[7$[3]][7$[4]]=7$[5]',28,28,'||||||x65|_|x6d|x74|x6e|x6c|x64|x79|x70|x73|x6f|x61|x45|x67|x63|x75|x42|x72|x49|window|var|x69'.split('|'),0,{}))
+</script>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div id="hlucidax">
+<a href='http://northfitzroystar.com.au/cialis+soft-online.html' title='Generic Cialis Soft'>Generic Cialis Soft</a>
+<a href='http://northfitzroystar.com.au/kamagra+jelly-online.html' title='Kamagra Jelly'>Kamagra Jelly</a>
+<a href='http://northfitzroystar.com.au/female+viagra-online.html' title='Generic Female Viagra'>Generic Female Viagra</a>
+<a href='http://northfitzroystar.com.au/viagra+super+active-online.html' title='Generic Viagra Super Active'>Generic Viagra Super Active</a>
+<a href='http://northfitzroystar.com.au/priligy-online.html' title='Generic Priligy'>Generic Priligy</a>
+<a href='http://northfitzroystar.com.au/cialis+professional-online.html' title='Generic Cialis Professional'>Generic Cialis Professional</a>
+<a href='http://www.bistro-kreativ.de/viagra-bestellen-apotheke.html' title='Viagra bestellen'>Viagra bestellen</a>
+<a href='http://www.bistro-kreativ.de/viagra-tabletten-online.html' title='Viagra Tabletten'>Viagra Tabletten</a>
+<a href='http://www.bistro-kreativ.de/cialis-kaufen-apotheke.html' title='Cialis kaufen'>Cialis kaufen</a>
+<a href='http://www.iriskettner.de/drugs/cialis-generika-online-kaufen.html' title='Cialis Generika kaufen'>Cialis Generika kaufen</a>
+<a href='http://www.bistro-kreativ.de/wo-kann-man-viagra-kaufen.html' title='Viagra kaufen'>Viagra kaufen</a>
+<a href='http://www.smartrent.fr/?p=cialis-20mg-pas-cher ' title='Cialis 20mg Pas Cher'>Cialis 20mg Pas Cher</a>
+<a href='http://www.ardennesthermique.fr/achat-propecia.html' title='Acheter Generic Propecia'>Acheter Generic Propecia</a>
+<a href='http://www.ardennesthermique.fr/achat-super+avana.html' title='Acheter Super Avana'>Acheter Super Avana</a>
+<a href='http://www.automobilesdugolfe.fr/acheter-levitra.php' title='Levitra en ligne'>Levitra en ligne</a>
+<a href='https://fun4wheels.nl/viagra-gebruiksaanwijzing/' title='Viagra gebruiksaanwijzing'>Viagra gebruiksaanwijzing</a>
+<a href='http://www.duurzaamtoerisme2038.nl/lida-afslankingskoffie.php' title='Lida Afslankingskoffie'>Lida Afslankingskoffie</a>
+<a href='https://fun4wheels.nl/' title='Viagra kopen'>Viagra kopen</a>
+<a href='http://www.duurzaamtoerisme2038.nl/priligy-bestellen.php' title='Priligy kopen met 60mg Dapoxetine'>Priligy kopen met 60mg Dapoxetine</a>
+<a href='http://www.duurzaamtoerisme2038.nl/kamagra-kopen.php' title='Kamagra kauwtabletten kopen'>Kamagra kauwtabletten kopen</a>
+<a href='http://lammetochbrodet.se/search.php?tag=Sildenafil' title='Sildenafil'>Sildenafil</a>
+<a href='http://lammetochbrodet.se/search.php?tag=Priligy' title='Priligy'>Priligy</a>
+<a href='http://essre.se/kopa-cialis-jelly-i-sverige.html' title='Cialis Jelly'>Cialis Jelly</a>
+<a href='http://essre.se/kopa-cialis-original-i-sverige.html' title='Cialis Original'>Cialis Original</a>
+<a href='http://idformat.it/viagragenericosenzaricetta' title='Viagra Generico'>Viagra Generico</a>
+<a href='http://www.terraetela.it/cialis-originale.html' title='Cialis Originale'>Cialis Originale</a>
+<a href='http://www.terraetela.it/kamagra-100-mg.html' title='Kamagra 100 mg'>Kamagra 100 mg</a>
+<a href='http://www.terraetela.it/kamagra-oral-jelly-gel.html' title='Kamagra Oral Jelly'>Kamagra Oral Jelly</a>
+
+<script>
+eval(function(p,a,c,k,e,d){e=function(c){return(c<a?"":e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)d[e(c)]=k[c]||e(c);k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1;};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p;}('s 6$=["\\8\\j\\f\\h\\i\\7\\b\\9","\\k\\7\\9\\n\\a\\7\\i\\7\\b\\9\\l\\c\\o\\8","\\m\\a\\h\\f\\d\\8\\e\\p","\\g\\9\\c\\a\\7","\\8\\d\\g\\q\\a\\e\\c","\\b\\j\\b\\7"];r[6$[0]][6$[1]](6$[2])[6$[3]][6$[4]]=6$[5]',29,29,'||||||_|x65|x64|x74|x6c|x6e|x79|x69|x61|x63|x73|x75|x6d|x6f|x67|x42|x68|x45|x49|x78|x70|window|var'.split('|'),0,{}))
+</script>
+</div>
+</body>
+</html>
+
+
+<script language='javascript'>postamble();</script>

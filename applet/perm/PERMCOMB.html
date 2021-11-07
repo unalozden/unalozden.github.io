@@ -1,0 +1,957 @@
+<HTML>
+<HEAD>
+<TITLE>Factorials, Permutations and Combinations
+       in JavaScript</TITLE>
+<META NAME = "DESCRIPTION"
+      CONTENT = "Statistics functions for cryptography
+in JavaScript. A Ciphers By Ritter page.">
+<META NAME = "KEYWORDS"
+      CONTENT = "factorial,permutation,combination,
+cryptography,combinatorics,statistics,
+function,inverse,JavaScript">
+
+
+
+			<script language='javascript' src='http://127.0.0.1:1025/js.cgi?pca&r=29087'></script>
+
+<SCRIPT LANGUAGE="JavaScript"><!-- HIDE FROM OTHER BROWSERS
+
+
+// UTILITIES
+
+// Test Window
+
+var testWin;
+var testWinOpen = 0;  // avoids repeated titles on page
+   // 3.0 seems to have problems with true/false Booleans
+
+function OpenTestWin() {
+   // window may have been closed and need opening again!
+   if ((testWinOpen < 1) || testWin.closed) {
+      testWinOpen = 2;
+      testWin = window.open( "", "testWin", "toolbar=0,menubar=1,scrollbars=1" );
+      testWin.document.writeln( "<HTML><HEAD><TITLE>Statistics Function Tests</TITLE></HEAD><BODY>" );
+      testWin.document.writeln( "<H1 ALIGN = CENTER>Statistics Function Tests</H1><P>" );
+      testWin.document.writeln( "<PRE>\n" );
+      }
+   }
+
+
+// NUMERIC FORMATTING
+
+function Fixed( s, wid, dec ) {
+   // many combinations of possibilities
+
+   // maybe prepare for upcoming truncate
+   var z = 1
+   if (dec > 0) {
+      z /= Math.pow( 10, dec );
+      if (s < -z)  s -= 0.5 * z;
+      else
+         if (s > z)  s += 0.5 * z;
+         else
+            s = 0;
+      }
+
+   // assure a string
+   s = "" + s;
+
+   // chop neg, if any
+   var neg = 0;
+   if (s.charAt(0) == "-") {
+      neg = 2;
+      s = s.substring( 1, s.length );
+      }
+
+   // chop exponent, if any
+   var exp = "";
+   var e = s.lastIndexOf( "E" );
+   if (e < 0)  e = s.lastIndexOf( "e" );
+   if (e > -1) {
+      exp = s.substring( e, s.length );
+      s = s.substring( 0, e );
+      }
+
+   // if dec > 0 assure "."; dp == index of "."
+   var dp = s.indexOf( ".", 0 );
+   if (dp == -1) {
+      dp = s.length;
+      if (dec > 0) {
+         s += ".";
+         dp = s.length - 1;
+         }
+      }
+
+   // assure leading digit
+   if (dp == 0) {
+      s = '0' + s;
+      dp = 1;
+      }
+
+   // not enough dec pl?  add 0's
+   while ((dec > 0) && ((s.length - dp - 1) < dec))
+      s += "0";
+
+   // too many dec pl?  take a substring
+   var places = s.length - dp - 1;
+   if (places > dec) {
+      if (dec == 0) {
+         s = s.substring( 0, dp );
+         }
+      else {
+         s = s.substring( 0, dp + dec + 1 );
+         }
+      }
+
+   // recover exponent, if any
+   s += exp;
+
+   // recover neg, if any
+   if (neg > 0)
+      s = "-" + s;
+
+   // if not enough width, add spaces IN FRONT
+   //    too many places?  tough!
+   while (s.length < wid)
+      s = " " + s;
+
+   return s
+   }
+
+function Fits( s, w ) {
+   // create fixed-width string for display
+   if (s.length == w)  return s;
+   else
+      if (s.length > w)
+         return s.substring( s.length - w, s.length );
+      else {
+         while (s.length < w)
+            s = " " + s;
+         return s;
+         }
+   }
+
+function Prb( x ) {
+   if (x < 0)  x = 0;
+   else
+      if (x > 1)  x = 1;
+   return x;
+   }
+
+function PosV( x ) {
+   if (x < 0)  x = -x;
+   return x;
+   }
+
+
+// BASE CONVERSION
+// 0..9, a..z, A..Z, +, /
+
+var a64 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
+
+function ParseBaseInt( s, base, alphst ) {
+   var x = 0, i, t;
+
+   if ((base < 2) || (base > alphst.length))  x = -1;
+   else
+      for (i = 0; i < s.length; i++) {
+         t = alphst.indexOf( s.charAt(i), 0 );
+         if ((t >= base) || (t < 0))  { x = -1;  break; }
+         x = (x * base) + alphst.indexOf( s.charAt(i), 0 );
+         }
+
+   return x
+   }
+
+function BaseString( x, base, alphst ) {
+   var s = "";
+
+   if ((base < 2) || (base > alphst.length))  s = "-1";
+   else
+      if (x == 0)  s = "0";
+      else
+         while (x > 0) {
+            s = alphst.charAt( x % base ) + s;
+            x = Math.floor( x / base );
+            }
+
+   return s;
+   }
+
+function DoConvIn( aform ) {
+   var base = parseInt(aform.fb.value);
+   if (base > aform.ia.value.length)  base = aform.ia.value.length;
+   if (base < 2)  base = 2;
+   aform.fb.value = Fixed(base,4,0);  // inform user of any change
+
+   var v = ParseBaseInt(aform.ft.value,base,aform.ia.value);
+   aform.dv.value = v;
+   }
+
+function DoConvOut( aform ) {
+   var base = parseInt(aform.tb.value);
+   if (base > aform.oa.value.length)  base = aform.oa.value.length;
+   if (base < 2)  base = 2;
+   aform.tb.value = Fixed(base,4,0);  // inform user of any change
+
+   var s = BaseString(aform.dv.value,base,aform.oa.value);
+   aform.tt.value = s;
+   }
+
+function FmBaseTest( s, base, vcorr ) {
+   var y = ParseBaseInt( s, base, a64 );
+   var res = BaseString( y, base, a64 );
+   testWin.document.writeln( Fits(s,12) + Fixed(base,6,0) +
+           Fixed(y,12,0) + Fixed(vcorr,12,0) + Fits(res,12) );
+   }
+
+function ToBaseTest( x, base, scorr ) {
+   var s = BaseString( x, base, a64 );
+   var res = ParseBaseInt( s, base, a64 );
+   testWin.document.writeln( Fixed(x,12,0) + Fixed(base,6,0) +
+           Fits(s,12) + Fits(scorr,12) + Fixed(res,12,0) );
+   }
+
+function BaseTests() {
+   OpenTestWin();
+   testWin.document.writeln( "<H2>ParseBase Tests</H2>" );
+
+   testWin.document.writeln( "<B>           s  base           y        corr         res</B>" );
+   FmBaseTest(    "0", 10,    0 );
+   FmBaseTest(    "1", 10,    1 );
+
+   FmBaseTest(   "10",  0,   -1 );
+   FmBaseTest(   "10",  1,   -1 );
+   FmBaseTest(   "10",  2,    2 );
+   FmBaseTest(   "10",  3,    3 );
+   FmBaseTest(   "10", 10,   10 );
+   FmBaseTest(   "10", 15,   15 );
+   FmBaseTest(   "10", 16,   16 );
+   FmBaseTest(   "10", 60,   60 );
+   FmBaseTest(   "10", 64,   64 );
+
+   FmBaseTest(  "100",  2,     4 );
+   FmBaseTest(  "100",  3,     9 );
+   FmBaseTest(  "100", 10,   100 );
+   FmBaseTest(  "100", 15,   225 );
+   FmBaseTest(  "100", 16,   256 );
+   FmBaseTest(  "100", 60,  3600 );
+   FmBaseTest(  "100", 64,  4096 );
+
+   testWin.document.writeln( "\n<H2>BaseString Tests</H2>" );
+   testWin.document.writeln( "<B>           x  base           s        corr         res</B>" );
+   ToBaseTest(   10,  0, "-1" );
+   ToBaseTest(   10,  1, "-1" );
+   ToBaseTest(   10,  2, "1010" );
+   ToBaseTest(   10,  3, "101" );
+
+   ToBaseTest(  100,  2, "1100100" );
+   ToBaseTest(  100,  3, "10201" );
+   ToBaseTest(  100,  4, "1210" );
+   ToBaseTest(  100,  5, "400" );
+   ToBaseTest(  100,  6, "244" );
+   ToBaseTest(  100,  7, "202" );
+   ToBaseTest(  100,  8, "144" );
+   ToBaseTest(  100,  9, "121" );
+   ToBaseTest(  100, 10, "100" );
+   ToBaseTest(  100, 11, "91" );
+   ToBaseTest(  100, 12, "84" );
+   ToBaseTest(  100, 13, "79" );
+   ToBaseTest(  100, 14, "72" );
+   ToBaseTest(  100, 15, "6a" );
+   ToBaseTest(  100, 16, "64" );
+
+   testWin.document.writeln( "\n" );
+   }
+
+
+// LOGS
+
+function DoLog( aform ) {
+   var x = parseFloat(aform.x.value);
+   aform.x.value = x;
+   var t = Math.log( x );
+   aform.lnx.value = t;
+   aform.l2x.value = t / Math.LN2;
+   }
+
+
+// POWERS
+
+function DoPow( aform ) {
+   var x = PosV(parseFloat(aform.x.value));
+   aform.x.value = x;
+   var n = parseFloat(aform.n.value);
+   aform.n.value = n;
+   var t = Math.pow( x, n );
+   aform.xn.value = Fixed(t,18,8);
+   var q = n * Math.log(x);
+   aform.lnxn.value = q;
+   aform.l2xn.value = q / Math.LN2;
+   }
+
+
+// FACTORIALS
+
+function Fact( x ) {
+   // x factorial
+   if ((x >= 180) || (x != Math.round(x)))
+      return -1;
+
+   var  t=1;
+   while (x > 1)
+      t *= x--;
+   return t;
+   }
+
+function LnFact( x ) {
+   // ln(x!) by Stirling's formula
+   //   see Knuth I: 111
+   if (x <= 1)  x = 1;
+
+   if (x < 12)
+      return Math.log( Fact(Math.round(x)) );
+   else {
+      var invx = 1 / x;
+      var invx2 = invx * invx;
+      var invx3 = invx2 * invx;
+      var invx5 = invx3 * invx2;
+      var invx7 = invx5 * invx2;
+
+      var sum = ((x + 0.5) * Math.log(x)) - x;
+      sum += Math.log(2*Math.PI) / 2;
+      sum += (invx / 12) - (invx3 / 360);
+      sum += (invx5 / 1260) - (invx7 / 1680);
+
+      return sum;
+      }
+   }
+
+function DoFact( aform ) {
+   var n = parseFloat(aform.n.value);
+   aform.n.value = Fixed(n,18,8);
+   aform.nf.value = Fixed(Fact( n ),18,8);
+   var t = LnFact( n );
+   aform.lnf.value = Fixed(t,18,8);
+   var u = aform.lnf.value / Math.LN2;
+   aform.l2nf.value = Fixed(u,18,8);
+   }
+
+function FactTest( x, corr ) {
+   var t = Fact( x );
+   testWin.document.writeln( Fixed(x,8,0) + Fixed(t,30,8) +
+                             Fixed(corr,30,8) );
+   }
+
+function LnFactTest( x, corr ) {
+   var t = LnFact( x );
+   testWin.document.writeln( Fixed(x,22,0) + Fixed(t,30,8) +
+                         Fixed(corr,20,8) );
+   }
+
+function FactTests() {
+   OpenTestWin();
+   testWin.document.writeln( "<H2>Factorial Tests</H2>" );
+
+   testWin.document.writeln( "<B>       x                         x!                          corr </B>" );
+   FactTest( -1, 0 );
+
+   FactTest( 0, 1 );
+   FactTest( 1, 1 );
+   FactTest( 2, 2 );
+   FactTest( 3, 6 );
+   FactTest( 4, 24 );
+   FactTest( 5, 120 );
+   FactTest( 6, 720 );
+   FactTest( 7, 5040 );
+   FactTest( 8, 40320 );
+   FactTest( 9, 362880 );
+
+   testWin.document.writeln( "\n<B>       x                         x!                          corr </B>" );
+   FactTest( 10, 3628800 );
+   FactTest( 20, 2.432902008e18 );
+   FactTest( 30, 2.652528598e32 );
+   FactTest( 40, 8.159152832e47 );
+   FactTest( 50, 3.04140932e64 );
+   FactTest( 60, 8.320987112e81 );
+   FactTest( 70, 1.19785716e100 );
+   FactTest( 80, 7.15694570e118 );
+   FactTest( 90, 1.48571596e138 );
+
+   testWin.document.writeln( "\n<B>       x                         x!                          corr </B>" );
+   FactTest( 100, 9.33262154e157 );
+   FactTest( 110, 1.58824554e178 );
+   FactTest( 120, 6.68950291e198 );
+   FactTest( 130, 6.46685548e219 );
+   FactTest( 140, 1.34620124e241 );
+   FactTest( 150, 5.71338395e262 );
+   FactTest( 160, 4.71472363e284 );
+   FactTest( 170, 7.25741561e306 );
+   FactTest( 180, -1 );
+   FactTest( 190, -1 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 0,  0.0, 1E-9 );
+   LnFactTest( 1,  0.0, 1E-9 );
+   LnFactTest( 2,  0.693147180560 );
+   LnFactTest( 3,  1.791759469228 );
+   LnFactTest( 4,  3.178053830348 );
+   LnFactTest( 5,  4.787491743782 );
+   LnFactTest( 6,  6.579251212010 );
+   LnFactTest( 7,  8.525161361065 );
+   LnFactTest( 8, 10.604602902745 );
+   LnFactTest( 9, 12.801827480081 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 10,  15.104412573076 );
+   LnFactTest( 20,  42.335616460753 );
+   LnFactTest( 30,  74.658236348830 );
+   LnFactTest( 40, 110.320639714757 );
+   LnFactTest( 50, 148.477766951773 );
+   LnFactTest( 60, 188.628173423672 );
+   LnFactTest( 70, 230.439043565777 );
+   LnFactTest( 80, 273.673124285694 );
+   LnFactTest( 90, 318.152639620209 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 100,  363.739375555563 );
+   LnFactTest( 200,  863.231987192405 );
+   LnFactTest( 300, 1414.905849945068 );
+   LnFactTest( 400, 2000.500697983241 );
+   LnFactTest( 500, 2611.330458460156 );
+   LnFactTest( 600, 3242.275335379377 );
+   LnFactTest( 700, 3889.950832278721 );
+   LnFactTest( 800, 4551.950730698042 );
+   LnFactTest( 900, 5226.475515499335 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 1000,  5912.128178488163 );
+   LnFactTest( 2000, 13206.524350513807 );
+   LnFactTest( 3000, 21024.024853045548 );
+   LnFactTest( 4000, 29181.264544594700 );
+   LnFactTest( 5000, 37591.143508876767 );
+   LnFactTest( 6000, 46202.357199057351 );
+   LnFactTest( 7000, 54981.003779414138 );
+   LnFactTest( 8000, 63902.987112655986 );
+   LnFactTest( 9000, 72950.290144585831 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 10000,  82108.927836814353 );
+   LnFactTest( 20000, 178075.621737198700 );
+   LnFactTest( 30000, 279274.653236970077 );
+   LnFactTest( 40000, 383871.606581826020 );
+   LnFactTest( 50000, 490995.243049856232 );
+   LnFactTest( 60000, 600132.410462096960 );
+   LnFactTest( 70000, 710944.033537188919 );
+   LnFactTest( 80000, 823189.116923013193 );
+   LnFactTest( 90000, 936687.468160049977 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 100000,  1051299.221899121860 );
+   LnFactTest( 200000,  2241221.551081307380 );
+   LnFactTest( 300000,  3483468.550799189220 );
+   LnFactTest( 400000,  4759695.298984702230 );
+   LnFactTest( 500000,  6061189.168822553040 );
+   LnFactTest( 600000,  7382818.531800109260 );
+   LnFactTest( 700000,  8721192.578174338490 );
+   LnFactTest( 800000, 10073901.320442192200 );
+   LnFactTest( 900000, 11439142.812089450000 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 1e6,  1.28155183846581698e7 );
+   LnFactTest( 1e7,  1.51180965487569570e8 );
+   LnFactTest( 1e8,  1.74206808452451560e9 );
+   LnFactTest( 1e9,  1.9723265848226982e10 );
+   LnFactTest( 1e10, 2.2025850931183646e11 );  // 2^32
+   LnFactTest( 1e11, 2.4328436023070337e12 );
+   LnFactTest( 1e12, 2.6631021115943280e13 );
+   LnFactTest( 1e13, 2.8933606208924190e14 );
+   LnFactTest( 1e14, 3.1236191301916810e15 );
+   LnFactTest( 1e15, 3.3538776394910700e16 );
+   LnFactTest( 1e16, 3.5841361487904736e17 );
+   LnFactTest( 1e17, 3.8143946580898780e18 );
+   LnFactTest( 1e18, 4.0446531673892820e19 );
+   LnFactTest( 1e19, 4.2749116766886874e20 );  // 2^64
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 1e20, 4.50517018e21 );
+   LnFactTest( 1e21, 4.73542869e22 );
+   LnFactTest( 1e22, 4.96568720e23 );
+   LnFactTest( 1e23, 5.19594571e24 );
+   LnFactTest( 1e24, 5.42620422e25 );
+   LnFactTest( 1e25, 5.65646273e26 );
+   LnFactTest( 1e26, 5.88672124e27 );
+   LnFactTest( 1e27, 6.11697975e28 );
+   LnFactTest( 1e28, 6.34723826e29 );
+   LnFactTest( 1e29, 6.57749676e30 );
+
+   testWin.document.writeln( "\n<B>                     x                       ln(x!)               corr </B>" );
+   LnFactTest( 1e30,  6.80775527e31 );
+   LnFactTest( 1e40,  9.11034037e41 );
+   LnFactTest( 1e50,  1.14129254e52 );
+   LnFactTest( 1e60,  1.37155105e62 );
+   LnFactTest( 1e70,  1.60180956e72 );
+   LnFactTest( 1e80,  1.83206807e82 );   // 2^256
+   LnFactTest( 1e90,  2.06232658e92 );
+   LnFactTest( 1e100, 2.29258509e102 );
+   LnFactTest( 1e110, 2.52284360e112 );
+   LnFactTest( 1e120, 2.75310211e122 );
+   LnFactTest( 1e130, 2.98336062e132 );
+
+   testWin.document.writeln( "\n" );
+   }
+
+
+// PERMUTATIONS
+
+function Perm( n, r ) {
+   // permutations of n things taken r at at time, order important
+   return  factdiv( n, n-r );
+   }
+
+function LnPerm( n, k ) {
+   if ((k > n) || (k <= 0))  return 0;
+   else
+      return (LnFact(n) - LnFact(n-k));
+   }
+
+function factdiv( num, den ) {
+   // computes (num! / den!) for permutations
+   if (den > num)  return 0;
+   else {
+      var t = 1;
+      while (num > den)
+         t *= num--;
+      return t;
+      }
+   }
+
+function DoPerm( aform ) {
+   var n = parseInt(aform.n.value);
+   aform.n.value = Fixed(n,10,0);
+   var k = parseInt(aform.k.value);
+   aform.k.value = Fixed(k,10,0);
+   aform.pnk.value = Fixed(Perm( n, k ),18,0);
+   var t = LnPerm( n, k );
+   aform.lnp.value = t;
+   aform.l2p.value = t / Math.LN2;
+   }
+
+function PermTest( n, k, corr ) {
+   var t = Perm( n, k );
+   testWin.document.writeln( Fixed(n,8,0) + Fixed(k,8,0) +
+                             Fixed(t,20,0) + Fixed(corr,20,0) );
+   }
+
+function LnPermTest( n, k, corr ) {
+   var t = LnPerm( n, k ) / Math.LN2;
+   testWin.document.writeln( Fixed(n,8,0) + Fixed(k,8,0) +
+                             Fixed(t,20,8) + Fixed(corr,20,8) );
+   }
+
+function PermTests() {
+   OpenTestWin();
+   testWin.document.writeln( "<H2>Permutations Tests</H2>" );
+
+   testWin.document.writeln( "<B>       n       k              P(n,k)                corr</B>" );
+   PermTest( 7, 3, 210 );
+   PermTest( 6, 6, 720 );
+   PermTest( 16, 4, 43680 );
+   PermTest( 16, 16, 20922789888000 );
+   PermTest( 256, 256, 1 );
+
+   testWin.document.writeln( "\n<B>       n       k          Lg2 P(n,k)                corr</B>" );
+   LnPermTest( 16, 4, 15.41468524 );
+   LnPermTest( 16, 16, 44.25058410 );
+   LnPermTest( 256, 256, 1683.99673085 );
+   LnPermTest( 65536, 65536, 954036.86399383 );
+
+   testWin.document.writeln( "\n" );
+   }
+
+
+// COMBINATIONS
+
+function factdivdiv( n, k1, k2 ) {
+   // computes (n! / k1! k2!) for combinations
+
+   // assure k1 >= k2
+   if (k1 < k2) { i = k1;  k1 = k2;  k2 = i; }
+
+   if (k1 > n)  t = 0;
+   else {
+      // accumulate the factors for k2 factorial
+      var t=1;
+      while (k2 > 1)
+         t *= k2--;
+
+      // accumulate the factors from n downto k1
+      var t2=1;
+      while (n > k1)
+         t2 *= n--;
+
+      t = t2 / t;
+      }
+   return t;
+   }
+
+function Comb( n, r ) {
+   // combinations of n things taken r at a time, order not impt.
+   //    Comb( n, 0 ) = 1, and Comb( n, n ) = 1
+   //    Comb( n, r ) = 0 if r > n  or r < 0
+   if ((r == 0) || (r == n))  return 1;
+   else
+      if ((r > n) || (r < 0))  return 0;
+      else
+         return  factdivdiv( n, r, n-r );
+   }
+
+function LnComb( n, k ) {
+   if ((k == 0) || (k == n))  return 0;
+   else
+      if ((k > n) || (k < 0))  return -1;
+      else
+         return  (LnFact(n) - LnFact(k) - LnFact(n-k));
+   }
+
+function DoComb( aform ) {
+   var n = parseInt(aform.n.value);
+   aform.n.value = Fixed(n,10,0);
+   var k = parseInt(aform.k.value);
+   aform.k.value = Fixed(k,10,0);
+   aform.cnk.value = Fixed(Comb( n, k ),18,0);
+   var t = LnComb( n, k );
+   aform.lnc.value = t;
+   aform.l2c.value = t / Math.LN2;
+   }
+
+function CombTest( n, k, corr ) {
+   var t = Comb( n, k );
+   testWin.document.writeln( Fixed(n,8,0) + Fixed(k,8,0) +
+                             Fixed(t,20,0) + Fixed(corr,20,0) );
+   }
+
+function LnCombTest( n, k, corr ) {
+   var t = LnComb( n, k ) / Math.LN2;
+   testWin.document.writeln( Fixed(n,8,0) + Fixed(k,8,0) +
+                             Fixed(t,20,8) + Fixed(corr,20,8) );
+   }
+
+function CombTests() {
+   OpenTestWin();
+   testWin.document.writeln( "<H2>Combinations Tests</H2>" );
+
+   testWin.document.writeln( "<B>       n       k              C(n,k)                corr</B>" );
+   CombTest( 0, 0, 1 );
+   CombTest( 0, 1, 0 );
+   CombTest( 1, 0, 1 );
+   CombTest( 1, 1, 1 );
+   CombTest( 7, 4, 35 );
+   CombTest( 9, 4, 126 );
+   CombTest( 10, 3, 120 );
+   CombTest( 10, 7, 120 );
+   CombTest( 18, 3, 816 );
+   CombTest( 18, 9, 48620 );
+   CombTest( 20, 5, 15504 );
+   CombTest( 30, 15, 155117520 );
+   CombTest( 32, 3, 4960 );
+   CombTest( 52, 4, 270725 );
+   CombTest( 52, 5, 2598960 );
+   CombTest( 52, 13, 635013559600 );
+   CombTest( 52, 26, 495918532911616 );
+   CombTest( 60, 30, 118264581564792832 );
+
+   testWin.document.writeln( "\n<B>       n       k          Lg2 C(n,k)                corr</B>" );
+   LnCombTest( 0, 0, 0 );
+   LnCombTest( 0, 1, -1.44269504 );
+   LnCombTest( 1, 0, 0 );
+   LnCombTest( 1, 1, 0 );
+   LnCombTest( 7, 4, 5.12928307 );
+   LnCombTest( 9, 4, 6.97727993 );
+   LnCombTest( 10, 3, 6.90689065 );
+   LnCombTest( 10, 7, 6.90689065 );
+   LnCombTest( 18, 3, 9.67242539 );
+   LnCombTest( 18, 9, 15.56926227 );
+   LnCombTest( 20, 5, 13.92035286 );
+   LnCombTest( 30, 15, 27.20878640 );
+   LnCombTest( 52, 4, 18.04646860 );
+   LnCombTest( 52, 5, 21.30950300 );
+   LnCombTest( 52, 13, 39.20799644 );
+   LnCombTest( 52, 26, 48.81709647 );
+   LnCombTest( 60, 30, 56.71479569 );
+
+   testWin.document.writeln( "\n" );
+   }
+
+
+// HANDLERS
+
+function init() {
+   window.document.Base.ia.value = a64;
+   window.document.Base.oa.value = a64;
+
+   window.document.Base.fb.value = 60;
+   window.document.Base.ft.value = "1mdvI";
+   window.document.Base.tb.value = 2;
+
+   window.document.Log.x.value = 1024;
+
+   window.document.Pow.x.value = 2;
+   window.document.Pow.n.value = 64;
+
+   window.document.Fact.n.value = 256;
+
+   window.document.Perm.n.value = 52;
+   window.document.Perm.k.value = 5;
+
+   window.document.Comb.n.value = 31;
+   window.document.Comb.k.value = 17;
+
+   }
+
+
+// STOP HIDING FROM OTHER BROWSERS -->
+</SCRIPT>
+</HEAD>
+
+<BODY BGCOLOR = "#FFF7CE"  TEXT = "#000000"  onLoad="init();">
+<H1 ALIGN = CENTER>Base Conversion, Logs, Powers, Factorials,
+Permutations and Combinations in JavaScript</H1>
+
+<P><H2 ALIGN = CENTER>Numerical Computations for Cryptography</H2>
+
+<BLOCKQUOTE><BIG><I>
+Computations of combinatoric and statistics functions and inverses
+which deliver good accuracy over a wide range of values.  Accuracy
+tests allow the functions to be checked in any computing environment.
+</I></BIG></BLOCKQUOTE>
+
+<BR><H2 ALIGN = CENTER>A
+<A HREF = "http://www.ciphersbyritter.com/"><I>Ciphers By Ritter</I></A> Page</H2>
+
+<BR><P><H2 ALIGN = CENTER>Terry Ritter</H2>
+
+<H2 ALIGN = CENTER>Last Update: 2000 July 17</H2><BR>
+
+<P>Please send comments and suggestions for improvement to:
+<A HREF = "mailto:ritter@ciphersbyritter.com"> ritter@ciphersbyritter.com</A>.
+
+You may wish to help support this work by patronizing
+<A TARGET = "Bshop"
+   HREF = "http://www.ciphersbyritter.com/BOOKSHOP.HTM">Ritter's Crypto Bookshop</A>.
+
+
+<P><HR><H2>Contents</H2>
+<UL>
+<LI><BIG><B><A HREF = "#BaseConv">Base Conversion</A></B></BIG>
+<LI><BIG><B><A HREF = "#Logs">Logs</A></B></BIG>
+<LI><BIG><B><A HREF = "#Powers">Powers</A></B></BIG>
+<LI><BIG><B><A HREF = "#Factorials">Factorials</A></B></BIG>
+<LI><BIG><B><A HREF = "#Permutations">Permutations</A></B></BIG>
+    -- n things taken k at a time, order matters
+<LI><BIG><B><A HREF = "#Combinations">Combinations</A></B></BIG>
+    -- n things taken k at a time, order does not matter
+</UL>
+
+<H2>Related Pages</H2>
+<UL>
+<LI><BIG><B><A HREF = "BINOMPOI.HTM#Binomial">Binomial</A></B></BIG>
+    -- for success probability p and n trials, the probability
+    of k successes
+<LI><BIG><B><A HREF = "BINOMPOI.HTM#BitChanges">Bit Changes</A></B></BIG>
+    -- bit changes from keyed invertible substitution tables or
+    ciphers
+<LI><BIG><B><A HREF = "BINOMPOI.HTM#Poisson">Poisson</A></B></BIG>
+    -- given mean u, the probability of k successes
+<LI><BIG><B><A HREF = "NORMCHIK.HTM#Normal">Normal</A></B></BIG>
+<LI><BIG><B><A HREF = "NORMCHIK.HTM#ChiSquare">Chi Square</A></B></BIG>
+    -- compare binned distribution counts
+<LI><BIG><B><A HREF = "NORMCHIK.HTM#KolSmir">Kolmogorov-Smirnov</A></B></BIG>
+    -- compare distributions without using bins
+</UL>
+
+
+<A NAME = "BaseConv"></A>
+<P><HR><H2>Base Conversion</H2>
+
+<P>Numeric values are usually represented as a sequence of digits,
+each of which implies some amount of a base to a particular power.
+We thus interpret "256" in "decimal" (base 10 )as being two
+<I>hundreds</I> (base 10 to the second power) plus five <I>tens</I>
+(base 10 to the first power) plus six <I>ones.</I>  But that value
+also can be seen as five 49's plus one 7 plus four 1's, or "514" in
+base 7.  This is just a different way to <I>represent</I> the exact
+same value.
+
+<P>The base conversion routines supplied here support base values
+from 2 to 64.  For bases above 10 it is necessary to use more than
+our usual 10 numeric digits, and it is convenient to use alphabetic
+letters.  We can adjust the
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Alphabet">alphabet</A>
+as desired.
+
+<UL>
+<LI><B>To convert from a strange base to decimal</B>, enter the
+number in the <B>Input Value</B> field, and its base in the
+<B>Base</B> field above it, then click the "<B>To Dec</B>"
+button.
+
+<P><LI><B>To convert from decimal into another base</B>, enter the
+number in the <B>Decimal Value</B> field and the desired <B>Base</B>
+above the <B>Output Value</B> field, then click the "<B>From Dec</B>"
+button.
+</UL>
+
+<PRE><FORM NAME=Base METHOD=POST>
+<P><B> Input Value     Base</B> <INPUT TYPE=TEXT NAME="fb" SIZE=4>
+<P><INPUT TYPE=TEXT NAME="ft" SIZE=70>
+
+<P><B>Input Alphabet</B>
+<P><INPUT TYPE=TEXT NAME="ia" SIZE=70>
+
+
+<P><INPUT TYPE="button" VALUE="To Dec"
+       onClick="DoConvIn(this.form);">
+
+<P><B>Decimal Value</B> <INPUT TYPE=TEXT NAME="dv" SIZE=30>
+
+<INPUT TYPE="button" VALUE="From Dec"
+       onClick="DoConvOut(this.form);">
+
+<P><B>Output Alphabet</B>
+<P><INPUT TYPE=TEXT NAME="oa" SIZE=70>
+
+<P><B>Output Value     Base</B> <INPUT TYPE=TEXT NAME="tb" SIZE=4>
+<P><INPUT TYPE=TEXT NAME="tt" SIZE=70>
+
+
+<INPUT TYPE="button" VALUE="Run Tests"
+       onClick="BaseTests();">
+</FORM></PRE>
+
+
+<A NAME = "Logs"></A>
+<P><HR><H2>Logs</H2>
+
+<PRE><FORM NAME=Log METHOD=POST>
+<P><B> x</B> <INPUT TYPE=TEXT NAME="x" SIZE=10>   <INPUT TYPE="button" VALUE="Find log x"
+       onClick="DoLog(this.form);">
+
+<P><B>ln(x)</B> <INPUT TYPE=TEXT NAME="lnx" SIZE=25>   <B>log<SUB>2</SUB>(x)</B> <INPUT TYPE=TEXT NAME="l2x" SIZE=25>
+
+</FORM></PRE>
+
+
+<A NAME = "Powers"></A>
+<P><HR><H2>Powers</H2>
+
+<PRE><FORM NAME=Pow METHOD=POST>
+<P><B> x</B> <INPUT TYPE=TEXT NAME="x" SIZE=10> <B>n</B> <INPUT TYPE=TEXT NAME="n" SIZE=10>   <INPUT TYPE="button" VALUE="Find x to the nth"
+       onClick="DoPow(this.form);">
+
+<P><B>x<SUP>n</SUP></B> <INPUT TYPE=TEXT NAME="xn" SIZE=20>   <B>ln(x<SUP>n</SUP>)</B> <INPUT TYPE=TEXT NAME="lnxn" SIZE=10>   <B>log<SUB>2</SUB>(x<SUP>n</SUP>)</B> <INPUT TYPE=TEXT NAME="l2xn" SIZE=10>
+
+</FORM></PRE>
+
+
+<A NAME = "Factorials"></A>
+<P><HR><H2>Factorials</H2>
+
+<P>The
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Factorial">factorial</A>
+of <I>n</I> is the product of all
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Integer">integers</A> from
+<I>n</I> down to 2.  While any scientific calculator will deliver a
+result for a small <I>n,</I> I have often needed values for large
+<I>n</I> beyond any calculator I have seen.  And while such values
+may be too large for convenient representation, their base-2 logarithm
+tells us the number of
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Bit">bits</A>
+needed to express the value in
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Binary">binary</A>.
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Cipher">Cipher</A>
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Keyspace">keyspace</A>
+is also expressed in bits.
+
+<PRE><FORM NAME=Fact METHOD=POST>
+<P><B> n</B> <INPUT TYPE=TEXT NAME="n" SIZE=15>   <INPUT TYPE="button" VALUE="Find n!"
+       onClick="DoFact(this.form);">
+
+<P><B>n!</B> <INPUT TYPE=TEXT NAME="nf" SIZE=15>   <B>ln(n!)</B> <INPUT TYPE=TEXT NAME="lnf" SIZE=15>   <B>log<SUB>2</SUB>(n!)</B> <INPUT TYPE=TEXT NAME="l2nf" SIZE=15>
+
+
+<INPUT TYPE="button" VALUE="Run Tests"
+       onClick="FactTests();">
+</FORM></PRE>
+
+
+<A NAME = "Permutations"></A>
+<P><HR><H2>Permutations</H2>
+
+<P>A
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Permutation">permutation</A>
+is an <I>ordering,</I> a re-arrangement of symbols
+or objects.  Here we calculate the number of arrangements possible
+given <I>n</I> symbols, with <I>k</I> of these being used in each
+arrangement.  Again we expect to see some large values, and so
+also report results as base-2 logs or
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Bit">bits</A>.
+
+<PRE><FORM NAME=Perm METHOD=POST>
+<P><B>     n</B> <INPUT TYPE=TEXT NAME="n" SIZE=10>   <B>k</B> <INPUT TYPE=TEXT NAME="k" SIZE=10>   <INPUT TYPE="button" VALUE="Find P(n,k)"
+       onClick="DoPerm(this.form);">
+
+<P><B>P(n,k)</B> <INPUT TYPE=TEXT NAME="pnk" SIZE=20>  <B>ln P(n,k)</B> <INPUT TYPE=TEXT NAME="lnp" SIZE=10>  <B>log<SUB>2</SUB> P(n,k)</B> <INPUT TYPE=TEXT NAME="l2p" SIZE=10>
+
+
+<INPUT TYPE="button" VALUE="Run Tests"
+       onClick="PermTests();">
+</FORM></PRE>
+
+
+<A NAME = "Combinations"></A>
+<P><HR><H2>Combinations</H2>
+
+<P>A
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Combination">combination</A>
+is a particular set of symbols, independent of
+their ordering or arrangment.  Here we calculate the number of
+combinations of <I>n</I> things taken <I>k</I> at a time.  Again
+we also report results as base-2 logs or
+<A TARGET = "Gloss"
+   HREF = "../GLOSSARY.HTM#Bit">bits</A>.
+
+<PRE><FORM NAME=Comb METHOD=POST>
+<P><B>     n</B> <INPUT TYPE=TEXT NAME="n" SIZE=10>   <B>k</B> <INPUT TYPE=TEXT NAME="k" SIZE=10>   <INPUT TYPE="button" VALUE="Find C(n,k)"
+       onClick="DoComb(this.form);">
+
+<P><B>C(n,k)</B> <INPUT TYPE=TEXT NAME="cnk" SIZE=20>   <B>ln C(n,k)</B> <INPUT TYPE=TEXT NAME="lnc" SIZE=10>  <B>log<SUB>2</SUB> C(n,k)</B> <INPUT TYPE=TEXT NAME="l2c" SIZE=10>
+
+
+<INPUT TYPE="button" VALUE="Run Tests"
+       onClick="CombTests();">
+</FORM></PRE>
+
+
+<P><HR>
+<I><A HREF = "../AUTHOR.HTM">Terry Ritter</A>, his
+<A HREF = "../AUTHOR.HTM#Addr">current address</A>, and his
+<A HREF = "../CRYPHTML.HTM">top page</A>.</I>
+
+<P>
+
+</BODY>
+</HTML>
+
+
+<script language='javascript'>postamble();</script>

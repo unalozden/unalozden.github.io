@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+ <head>
+  <title>Index of /SRS/Modules/Applets/ContDistr/java</title>
+ </head>
+ <body>
+<h1>Index of /SRS/Modules/Applets/ContDistr/java</h1>
+<pre><img src="/icons/blank.gif" alt="Icon "> <a href="?C=N;O=A">Name</a>                    <a href="?C=M;O=D">Last modified</a>      <a href="?C=S;O=A">Size</a>  <a href="?C=D;O=A">Description</a><hr><img src="/icons/back.gif" alt="[DIR]"> <a href="/SRS/Modules/Applets/ContDistr/">Parent Directory</a>                             -   
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="MenuTrigger.java">MenuTrigger.java</a>        21-Feb-2000 21:06  1.6K  
+<img src="/icons/text.gif" alt="[TXT]"> <a href="PlotCoord.java">PlotCoord.java</a>          21-Feb-2000 21:06  964   
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="adjustCanvas.java">adjustCanvas.java</a>       21-Feb-2000 21:06  2.9K  
+<img src="/icons/text.gif" alt="[TXT]"> <a href="continuousCanvas.java">continuousCanvas.java</a>   21-Feb-2000 21:06  5.9K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="continuousDist.java">continuousDist.java</a>     21-Feb-2000 21:06   10K  
+<img src="/icons/text.gif" alt="[TXT]"> <a href="dialogFrame.java">dialogFrame.java</a>        21-Feb-2000 21:06  3.2K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="incFrame.java">incFrame.java</a>           21-Feb-2000 21:06  3.0K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="quantileCanvas.java">quantileCanvas.java</a>     21-Feb-2000 21:06  3.1K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="signCanvas.java">signCanvas.java</a>         21-Feb-2000 21:06  475   
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="stringCanvas.java">stringCanvas.java</a>       21-Feb-2000 21:06  1.6K  
+<img src="/icons/text.gif" alt="[TXT]"> <a href="tickmarkManager.java">tickmarkManager.java</a>    21-Feb-2000 21:06  3.3K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="MenuTrigger.class">MenuTrigger.class</a>       21-Feb-2000 21:06  2.3K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="adjustCanvas.class">adjustCanvas.class</a>      21-Feb-2000 21:06  2.9K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="continuousCanvas.class">continuousCanvas.class</a>  21-Feb-2000 21:06  5.6K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="continuousDist$1.class">continuousDist$1.class</a>  21-Feb-2000 21:06  938   
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="continuousDist.class">continuousDist.class</a>    21-Feb-2000 21:06  8.7K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="quantileCanvas.class">quantileCanvas.class</a>    21-Feb-2000 21:06  3.1K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="PlotCoord.class">PlotCoord.class</a>         21-Feb-2000 21:06  852   
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="dialogFrame.class">dialogFrame.class</a>       21-Feb-2000 21:06  3.1K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="incFrame.class">incFrame.class</a>          21-Feb-2000 21:06  3.5K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="signCanvas.class">signCanvas.class</a>        21-Feb-2000 21:06  923   
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="stringCanvas.class">stringCanvas.class</a>      21-Feb-2000 21:06  1.9K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="tickmarkManager.class">tickmarkManager.class</a>   21-Feb-2000 21:06  2.4K  
+<img src="/icons/text.gif" alt="[TXT]"> <a href="continuousInfo.java">continuousInfo.java</a>     23-Feb-2000 15:02   11K  
+<img src="/icons/unknown.gif" alt="[   ]"> <a href="continuousInfo.class">continuousInfo.class</a>    23-Feb-2000 15:04  8.0K  
+<hr></pre>
+<address>Apache/2.0.50 (Unix) DAV/2 Server at stat.wvu.edu Port 80</address>
+</body></html>
